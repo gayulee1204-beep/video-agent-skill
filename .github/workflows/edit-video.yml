@@ -35,8 +35,8 @@ jobs:
         run: ffmpeg -y -i "${{ steps.findvideo.outputs.video_file }}" -vn -acodec pcm_s16le -ar 16000 -ac 1 audio.wav
 
       - name: Transcrever o audio
-        run: python skills/video-editor-whisper/scripts/transcribe.py audio.wav > transcript.json
-
+        run: python skills/video-editor-whisper/scripts/transcribe.py audio.wav transcript.json
+        
       - name: Depurar - mostrar conteudo do transcript
         run: |
           echo "Tamanho do arquivo transcript.json:"
