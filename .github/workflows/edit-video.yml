@@ -37,6 +37,13 @@ jobs:
       - name: Transcrever o audio
         run: python skills/video-editor-whisper/scripts/transcribe.py audio.wav > transcript.json
 
+      - name: Depurar - mostrar conteudo do transcript
+        run: |
+          echo "Tamanho do arquivo transcript.json:"
+          wc -c transcript.json
+          echo "Conteudo:"
+          cat transcript.json
+
       - name: Decidir os cortes automaticamente
         run: python skills/video-editor-whisper/scripts/analyze_transcript.py transcript.json cuts.json
 
