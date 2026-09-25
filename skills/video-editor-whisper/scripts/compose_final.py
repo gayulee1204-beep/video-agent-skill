@@ -47,15 +47,20 @@ def main():
     else:
         mixed_audio_path = narration_path
 
+    # Alignment=10 = centro da tela (numeracao antiga do SSA, usada
+    # internamente pelo filtro "subtitles" do ffmpeg quando converte
+    # um .srt puro). Outline mais fino + sombra leve deixa o contorno
+    # mais limpo em vez de "grudado".
     style = (
         "FontName=" + font_name +
         ",PrimaryColour=&H0000FFFF&"
         ",OutlineColour=&H00000000&"
         ",BorderStyle=1"
-        ",Outline=2"
-        ",Shadow=0"
-        ",Alignment=5"
+        ",Outline=1.4"
+        ",Shadow=0.3"
+        ",Alignment=10"
         ",Bold=1"
+        ",Spacing=0.5"
     )
 
     subtitles_filter = "subtitles=" + srt_path + ":force_style='" + style + "'"
