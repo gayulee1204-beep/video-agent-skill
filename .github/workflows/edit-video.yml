@@ -3,7 +3,7 @@ name: Editar Video Automaticamente
 on:
   push:
     paths:
-      - 'input/**.mp4'
+      - 'input/**'
   workflow_dispatch:
 
 jobs:
@@ -21,8 +21,8 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Instalar Whisper
-        run: pip install openai-whisper
+      - name: Instalar Whisper e gTTS
+        run: pip install openai-whisper gTTS
 
       - name: Encontrar o video de entrada
         id: findvideo
@@ -34,24 +34,38 @@ jobs:
       - name: Extrair o audio do video
         run: ffmpeg -y -i "${{ steps.findvideo.outputs.video_file }}" -vn -acodec pcm_s16le -ar 16000 -ac 1 audio.wav
 
-      - name: Transcrever o audio
+      - name: Transcrever o audio original
         run: python skills/video-editor-whisper/scripts/transcribe.py audio.wav transcript.json
-        
-      - name: Depurar - mostrar conteudo do transcript
-        run: |
-          echo "Tamanho do arquivo transcript.json:"
-          wc -c transcript.json
-          echo "Conteudo:"
-          cat transcript.json
 
       - name: Decidir os cortes automaticamente
         run: python skills/video-editor-whisper/scripts/analyze_transcript.py transcript.json cuts.json
 
-      - name: Editar o video final
-        run: python skills/video-editor-whisper/scripts/edit_video.py "${{ steps.findvideo.outputs.video_file }}" cuts.json output.mp4
+      - name: Cortar silencios do video
+        run: python skills/video-editor-whisper/scripts/edit_video.py "${{ steps.findvideo.outputs.video_file }}" cuts.json cortado.mp4
 
-      - name: Disponibilizar o video editado para download
+      - name: Gerar narracao a partir do texto
+        run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3
+
+      - name: Transcrever a narracao (para legendas)
+        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json
+
+      - name: Gerar arquivo de legendas
+        run: python skills/video-editor-whisper/scripts/make_srt.py narracao_transcript.json legendas.srt
+
+      - name: Verificar se ha musica de fundo
+        id: findmusic
+        run: |
+          if [ -f "input/musica.mp3" ]; then
+            echo "music_file=input/musica.mp3" >> "$GITHUB_OUTPUT"
+          else
+            echo "music_file=nenhuma" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compor o video final (narracao + musica + legendas)
+        run: python skills/video-editor-whisper/scripts/compose_final.py cortado.mp4 narracao.mp3 "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4
+
+      - name: Disponibilizar o video final para download
         uses: actions/upload-artifact@v4
         with:
-          name: video-editado
-          path: output.mp4
+          name: video-final
+          path: final.mp4
