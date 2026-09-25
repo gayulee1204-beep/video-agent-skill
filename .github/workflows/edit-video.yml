@@ -5,6 +5,19 @@ on:
     paths:
       - 'input/**'
   workflow_dispatch:
+    inputs:
+      voz:
+        description: 'Escolha a voz da narracao'
+        required: true
+        default: 'en-US-AriaNeural'
+        type: choice
+        options:
+          - en-US-AriaNeural
+          - en-US-GuyNeural
+          - en-GB-SoniaNeural
+          - en-GB-RyanNeural
+          - en-AU-NatashaNeural
+          - en-IN-NeerjaNeural
 
 jobs:
   edit-video:
@@ -29,8 +42,6 @@ jobs:
           mkdir -p ~/.fonts
           curl -fL -o ~/.fonts/Poppins-Bold.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf"
           fc-cache -f ~/.fonts
-          echo "Fontes encontradas com 'poppins' no nome:"
-          fc-list | grep -i poppins || echo "AVISO: a fonte Poppins NAO foi encontrada!"
 
       - name: Encontrar o video de entrada
         id: findvideo
@@ -40,7 +51,7 @@ jobs:
           echo "video_file=$VIDEO_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Gerar narracao em ingles (edge-tts)
-        run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3
+        run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3 "${{ github.event.inputs.voz || 'en-US-AriaNeural' }}"
 
       - name: Transcrever a narracao (para legendas)
         run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json en
