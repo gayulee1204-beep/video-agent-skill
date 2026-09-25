@@ -13,11 +13,15 @@ on:
         type: choice
         options:
           - en-US-AriaNeural
+          - en-US-JennyNeural
+          - en-US-EmmaNeural
+          - en-US-MichelleNeural
+          - en-US-SaraNeural
           - en-US-GuyNeural
-          - en-GB-SoniaNeural
-          - en-GB-RyanNeural
-          - en-AU-NatashaNeural
-          - en-IN-NeerjaNeural
+          - en-US-DavisNeural
+          - en-US-AndrewNeural
+          - en-US-BrianNeural
+          - en-US-EricNeural
 
 jobs:
   edit-video:
