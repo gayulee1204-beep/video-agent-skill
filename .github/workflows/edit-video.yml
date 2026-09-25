@@ -21,8 +21,14 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Instalar Whisper e gTTS
-        run: pip install openai-whisper gTTS
+      - name: Instalar Whisper e requests
+        run: pip install openai-whisper requests
+
+      - name: Instalar a fonte Poppins para as legendas
+        run: |
+          mkdir -p ~/.fonts
+          curl -L -o ~/.fonts/Poppins-Bold.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf"
+          fc-cache -f ~/.fonts
 
       - name: Encontrar o video de entrada
         id: findvideo
@@ -43,11 +49,13 @@ jobs:
       - name: Cortar silencios do video
         run: python skills/video-editor-whisper/scripts/edit_video.py "${{ steps.findvideo.outputs.video_file }}" cuts.json cortado.mp4
 
-      - name: Gerar narracao a partir do texto
+      - name: Gerar narracao em ingles (ElevenLabs)
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3
 
       - name: Transcrever a narracao (para legendas)
-        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json
+        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json en
 
       - name: Gerar arquivo de legendas
         run: python skills/video-editor-whisper/scripts/make_srt.py narracao_transcript.json legendas.srt
@@ -62,7 +70,7 @@ jobs:
           fi
 
       - name: Compor o video final (narracao + musica + legendas)
-        run: python skills/video-editor-whisper/scripts/compose_final.py cortado.mp4 narracao.mp3 "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4
+        run: python skills/video-editor-whisper/scripts/compose_final.py cortado.mp4 narracao.mp3 "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4 Poppins
 
       - name: Disponibilizar o video final para download
         uses: actions/upload-artifact@v4
