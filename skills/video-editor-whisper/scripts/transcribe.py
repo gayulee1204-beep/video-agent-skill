@@ -2,10 +2,10 @@
 """
 transcribe.py
 Transcreve um arquivo de audio usando Whisper e salva o resultado
-diretamente em um arquivo JSON.
+(com timestamps por palavra) diretamente em um arquivo JSON.
 
 Uso:
-    python transcribe.py audio.wav transcript.json
+    python transcribe.py audio.wav transcript.json [idioma]
 """
 
 import sys
@@ -14,11 +14,12 @@ import json
 
 def main():
     if len(sys.argv) < 3:
-        print("Uso: python transcribe.py <audio.wav> <saida.json>", file=sys.stderr)
+        print("Uso: python transcribe.py <audio.wav> <saida.json> [idioma]", file=sys.stderr)
         sys.exit(1)
 
     audio_path = sys.argv[1]
     output_path = sys.argv[2]
+    language = sys.argv[3] if len(sys.argv) > 3 else None
 
     try:
         import whisper
@@ -31,24 +32,40 @@ def main():
         sys.exit(1)
 
     model = whisper.load_model("base")
-    result = model.transcribe(audio_path, verbose=False)
+
+    kwargs = {"verbose": False, "word_timestamps": True}
+    if language:
+        kwargs["language"] = language
+
+    result = model.transcribe(audio_path, **kwargs)
+
+    segments_out = []
+    for seg in result.get("segments", []):
+        words_out = []
+        for w in seg.get("words", []):
+            word_text = (w.get("word") or "").strip()
+            if word_text:
+                words_out.append({
+                    "start": w["start"],
+                    "end": w["end"],
+                    "word": word_text,
+                })
+        segments_out.append({
+            "start": seg["start"],
+            "end": seg["end"],
+            "text": seg["text"].strip(),
+            "words": words_out,
+        })
 
     output = {
         "text": result.get("text", ""),
-        "segments": [
-            {
-                "start": seg["start"],
-                "end": seg["end"],
-                "text": seg["text"].strip(),
-            }
-            for seg in result.get("segments", [])
-        ],
+        "segments": segments_out,
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print(f"Transcricao salva em: {output_path}")
+    print("Transcricao salva em: " + output_path)
 
 
 if __name__ == "__main__":
