@@ -21,8 +21,8 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Instalar Whisper e requests
-        run: pip install openai-whisper requests
+      - name: Instalar Whisper e edge-tts
+        run: pip install openai-whisper edge-tts
 
       - name: Instalar a fonte Poppins para as legendas
         run: |
@@ -49,11 +49,9 @@ jobs:
       - name: Cortar silencios do video
         run: python skills/video-editor-whisper/scripts/edit_video.py "${{ steps.findvideo.outputs.video_file }}" cuts.json cortado.mp4
 
-      - name: Gerar narracao em ingles (ElevenLabs)
-        env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      - name: Gerar narracao em ingles (edge-tts)
         run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3
-
+    
       - name: Transcrever a narracao (para legendas)
         run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json en
 
