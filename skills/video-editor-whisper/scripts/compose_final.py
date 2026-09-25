@@ -2,10 +2,10 @@
 """
 compose_final.py
 Junta tudo: substitui o audio do video pela narracao (misturada com
-musica de fundo, se houver) e queima as legendas no video.
+musica de fundo, se houver) e queima as legendas estilizadas no video.
 
 Uso:
-    python compose_final.py video.mp4 narracao.mp3 musica.mp3 legendas.srt final.mp4
+    python compose_final.py video.mp4 narracao.mp3 musica.mp3 legendas.srt final.mp4 [fonte]
 
 Se nao tiver musica, passe a palavra "nenhuma" no lugar do caminho da musica.
 """
@@ -22,7 +22,7 @@ def run(cmd):
 
 def main():
     if len(sys.argv) < 6:
-        print("Uso: python compose_final.py <video.mp4> <narracao.mp3> <musica.mp3|nenhuma> <legendas.srt> <final.mp4>", file=sys.stderr)
+        print("Uso: python compose_final.py <video.mp4> <narracao.mp3> <musica.mp3|nenhuma> <legendas.srt> <final.mp4> [fonte]", file=sys.stderr)
         sys.exit(1)
 
     video_path = sys.argv[1]
@@ -30,6 +30,7 @@ def main():
     music_path = sys.argv[3]
     srt_path = sys.argv[4]
     final_path = sys.argv[5]
+    font_name = sys.argv[6] if len(sys.argv) > 6 else "Poppins"
 
     mixed_audio_path = "mixed_audio.mp3"
 
@@ -46,11 +47,24 @@ def main():
     else:
         mixed_audio_path = narration_path
 
+    style = (
+        "FontName=" + font_name +
+        ",PrimaryColour=&H0000FFFF&"
+        ",OutlineColour=&H00000000&"
+        ",BorderStyle=1"
+        ",Outline=2"
+        ",Shadow=0"
+        ",Alignment=5"
+        ",Bold=1"
+    )
+
+    subtitles_filter = "subtitles=" + srt_path + ":force_style='" + style + "'"
+
     run([
         "ffmpeg", "-y",
         "-i", video_path,
         "-i", mixed_audio_path,
-        "-vf", "subtitles=" + srt_path,
+        "-vf", subtitles_filter,
         "-map", "0:v",
         "-map", "1:a",
         "-c:v", "libx264",
