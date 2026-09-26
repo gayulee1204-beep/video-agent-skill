@@ -75,7 +75,7 @@ jobs:
           if [ "$BRILHO" = "nenhum" ]; then
             echo "glow_file=nenhuma" >> "$GITHUB_OUTPUT"
           else
-            echo "glow_file=assets/overlays/$BRILHO.mp4" >> "$GITHUB_OUTPUT"
+            echo "glow_file=assets/$BRILHO.mp4" >> "$GITHUB_OUTPUT"
           fi
       - name: Depurar - listar overlays
         run: |
