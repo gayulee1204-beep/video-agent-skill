@@ -77,7 +77,12 @@ jobs:
           else
             echo "glow_file=assets/overlays/$BRILHO.mp4" >> "$GITHUB_OUTPUT"
           fi
-
+      - name: Depurar - listar overlays
+        run: |
+          echo "Conteudo da pasta assets:"
+          find assets -type f
+          echo "Caminho esperado pelo script:"
+          echo "${{ steps.findglow.outputs.glow_file }}"
       - name: Aplicar efeitos visuais
         run: python skills/video-editor-whisper/scripts/apply_effects.py "${{ steps.findvideo.outputs.video_file }}" com_efeitos.mp4 "${{ steps.findglow.outputs.glow_file }}"
 
