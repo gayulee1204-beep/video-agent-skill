@@ -13,7 +13,10 @@ on:
         type: choice
         options:
           - lessac
+          - ryan
           - amy
+          - hfc_female
+          - joe
       brilho:
         description: 'Escolha o overlay de brilho'
         required: true
@@ -51,13 +54,18 @@ jobs:
         id: voz
         run: |
           VOZ="${{ github.event.inputs.voz || 'lessac' }}"
-          if [ "$VOZ" = "amy" ]; then
-            NOME="en_US-amy-medium"
-          else
-            NOME="en_US-lessac-medium"
-          fi
-          curl -fL -o modelo.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/medium/${NOME}.onnx"
-          curl -fL -o modelo.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/medium/${NOME}.onnx.json"
+          case "$VOZ" in
+            lessac) QUALIDADE="high" ;;
+            ryan) QUALIDADE="high" ;;
+            amy) QUALIDADE="medium" ;;
+            hfc_female) QUALIDADE="medium" ;;
+            joe) QUALIDADE="medium" ;;
+            *) VOZ="lessac"; QUALIDADE="high" ;;
+          esac
+          NOME="en_US-${VOZ}-${QUALIDADE}"
+          echo "Baixando voz: $NOME"
+          curl -fL -o modelo.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/${QUALIDADE}/${NOME}.onnx"
+          curl -fL -o modelo.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/${QUALIDADE}/${NOME}.onnx.json"
 
       - name: Instalar a fonte Poppins para as legendas
         run: |
