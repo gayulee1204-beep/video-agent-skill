@@ -2,20 +2,19 @@
 """
 generate_narration.py
 Gera um audio de narracao em ingles usando edge-tts (voz neural
-gratuita da Microsoft, sem precisar de chave de API).
+gratuita da Microsoft). Tenta novamente automaticamente se o
+servico falhar temporariamente.
 
 Uso:
     python generate_narration.py narracao.txt narracao.mp3 [voz]
-
-Vozes populares em ingles (para testar outras, rode: edge-tts --list-voices):
-    en-US-AriaNeural    (feminina, EUA)
-    en-US-GuyNeural     (masculina, EUA)
-    en-GB-SoniaNeural   (feminina, Reino Unido)
-    en-GB-RyanNeural    (masculina, Reino Unido)
 """
 
 import sys
 import asyncio
+import time
+
+MAX_TENTATIVAS = 4
+ESPERA_ENTRE_TENTATIVAS = 5  # segundos
 
 
 def main():
@@ -44,9 +43,22 @@ def main():
         communicate = edge_tts.Communicate(text, voice)
         await communicate.save(output_path)
 
-    asyncio.run(gerar())
+    ultimo_erro = None
+    for tentativa in range(1, MAX_TENTATIVAS + 1):
+        try:
+            print("Tentativa " + str(tentativa) + " de " + str(MAX_TENTATIVAS) + "...", file=sys.stderr)
+            asyncio.run(gerar())
+            print("Narracao salva em: " + output_path)
+            return
+        except Exception as e:
+            ultimo_erro = e
+            print("Falhou nessa tentativa: " + str(e), file=sys.stderr)
+            if tentativa < MAX_TENTATIVAS:
+                print("Esperando " + str(ESPERA_ENTRE_TENTATIVAS) + "s antes de tentar de novo...", file=sys.stderr)
+                time.sleep(ESPERA_ENTRE_TENTATIVAS)
 
-    print("Narracao salva em: " + output_path)
+    print("Erro: falhou apos " + str(MAX_TENTATIVAS) + " tentativas. Ultimo erro: " + str(ultimo_erro), file=sys.stderr)
+    sys.exit(1)
 
 
 if __name__ == "__main__":
