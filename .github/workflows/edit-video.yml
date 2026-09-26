@@ -9,19 +9,11 @@ on:
       voz:
         description: 'Escolha a voz da narracao'
         required: true
-        default: 'en-US-AriaNeural'
+        default: 'lessac'
         type: choice
         options:
-          - en-US-AriaNeural
-          - en-US-JennyNeural
-          - en-US-EmmaNeural
-          - en-US-MichelleNeural
-          - en-US-SaraNeural
-          - en-US-GuyNeural
-          - en-US-DavisNeural
-          - en-US-AndrewNeural
-          - en-US-BrianNeural
-          - en-US-EricNeural
+          - lessac
+          - amy
       brilho:
         description: 'Escolha o overlay de brilho'
         required: true
@@ -52,8 +44,20 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Instalar Whisper e edge-tts
-        run: pip install openai-whisper edge-tts
+      - name: Instalar Whisper e Piper TTS
+        run: pip install openai-whisper piper-tts
+
+      - name: Baixar o modelo de voz escolhido
+        id: voz
+        run: |
+          VOZ="${{ github.event.inputs.voz || 'lessac' }}"
+          if [ "$VOZ" = "amy" ]; then
+            NOME="en_US-amy-medium"
+          else
+            NOME="en_US-lessac-medium"
+          fi
+          curl -fL -o modelo.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/medium/${NOME}.onnx"
+          curl -fL -o modelo.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/medium/${NOME}.onnx.json"
 
       - name: Instalar a fonte Poppins para as legendas
         run: |
@@ -77,20 +81,15 @@ jobs:
           else
             echo "glow_file=assets/$BRILHO.mp4" >> "$GITHUB_OUTPUT"
           fi
-      - name: Depurar - listar overlays
-        run: |
-          echo "Conteudo da pasta assets:"
-          find assets -type f
-          echo "Caminho esperado pelo script:"
-          echo "${{ steps.findglow.outputs.glow_file }}"
+
       - name: Aplicar efeitos visuais
         run: python skills/video-editor-whisper/scripts/apply_effects.py "${{ steps.findvideo.outputs.video_file }}" com_efeitos.mp4 "${{ steps.findglow.outputs.glow_file }}"
 
-      - name: Gerar narracao em ingles (edge-tts)
-        run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.mp3 "${{ github.event.inputs.voz || 'en-US-AriaNeural' }}"
+      - name: Gerar narracao (Piper TTS)
+        run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.wav modelo.onnx
 
       - name: Transcrever a narracao (para legendas)
-        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.mp3 narracao_transcript.json en
+        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.wav narracao_transcript.json en
 
       - name: Gerar arquivo de legendas
         run: python skills/video-editor-whisper/scripts/make_srt.py narracao_transcript.json legendas.srt
@@ -105,7 +104,7 @@ jobs:
           fi
 
       - name: Compor o video final (narracao + musica + legendas)
-        run: python skills/video-editor-whisper/scripts/compose_final.py com_efeitos.mp4 narracao.mp3 "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4 Poppins
+        run: python skills/video-editor-whisper/scripts/compose_final.py com_efeitos.mp4 narracao.wav "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4 Poppins
 
       - name: Verificar se ha imagem para sobrepor
         id: findimage
