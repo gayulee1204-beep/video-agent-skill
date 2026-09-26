@@ -107,8 +107,20 @@ jobs:
       - name: Compor o video final (narracao + musica + legendas)
         run: python skills/video-editor-whisper/scripts/compose_final.py com_efeitos.mp4 narracao.mp3 "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4 Poppins
 
+      - name: Verificar se ha imagem para sobrepor
+        id: findimage
+        run: |
+          if [ -f "input/imagem.png" ]; then
+            echo "image_file=input/imagem.png" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_file=nenhuma" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sobrepor imagem no final do video
+        run: python skills/video-editor-whisper/scripts/add_image_overlay.py final.mp4 "${{ steps.findimage.outputs.image_file }}" final_completo.mp4 5
+
       - name: Disponibilizar o video final para download
         uses: actions/upload-artifact@v4
         with:
           name: video-final
-          path: final.mp4
+          path: final_completo.mp4
