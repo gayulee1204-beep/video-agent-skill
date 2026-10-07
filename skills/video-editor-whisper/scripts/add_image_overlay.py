@@ -5,7 +5,7 @@ Sobrepoe uma imagem na METADE DE BAIXO da tela, aparecendo apenas
 nos ultimos N segundos do video.
 
 Uso:
-    python add_image_overlay.py video.mp4 image.png saida.mp4 [segundos]
+    python add_image_overlay.py video.mp4 imagem.png saida.mp4 [segundos]
 """
 
 import sys
