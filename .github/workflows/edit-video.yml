@@ -117,8 +117,8 @@ jobs:
       - name: Verificar se ha imagem para sobrepor
         id: findimage
         run: |
-          if [ -f "input/image.png" ]; then
-            echo "image_file=input/image.png" >> "$GITHUB_OUTPUT"
+          if [ -f "input/imagem.png" ]; then
+            echo "image_file=input/imagem.png" >> "$GITHUB_OUTPUT"
           else
             echo "image_file=nenhuma" >> "$GITHUB_OUTPUT"
           fi
