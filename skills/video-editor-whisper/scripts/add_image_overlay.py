@@ -59,16 +59,27 @@ def main():
 
     duration = get_duration(video_path)
     width, height = get_dimensions(video_path)
+    img_w, img_h = get_dimensions(image_path)
+
     half_height = height // 2
     start_time = max(0.0, duration - seconds)
 
+    # Calcula o tamanho da imagem para caber na metade de baixo,
+    # mantendo a proporcao (sem usar o filtro pad).
+    factor = min(width / img_w, half_height / img_h)
+    new_w = max(2, int(img_w * factor) // 2 * 2)
+    new_h = max(2, int(img_h * factor) // 2 * 2)
+    new_w = min(new_w, width)
+    new_h = min(new_h, half_height)
+
+    # Centraliza a imagem dentro da metade de baixo
+    pos_x = (width - new_w) // 2
+    pos_y = half_height + (half_height - new_h) // 2
+
     filter_complex = (
-        "[1:v]format=rgba,"
-        "scale=w=" + str(width) + ":h=" + str(half_height) +
-        ":force_original_aspect_ratio=decrease,"
-        "pad=" + str(width) + ":" + str(half_height) +
-        ":(ow-iw)/2:(oh-ih)/2:color=black@0[img];"
-        "[0:v][img]overlay=x=0:y=" + str(half_height) +
+        "[1:v]setsar=1,format=rgba,"
+        "scale=" + str(new_w) + ":" + str(new_h) + "[img];"
+        "[0:v][img]overlay=x=" + str(pos_x) + ":y=" + str(pos_y) +
         ":enable='gte(t\\," + str(round(start_time, 2)) + ")'[outv]"
     )
 
@@ -80,6 +91,7 @@ def main():
         "-map", "[outv]",
         "-map", "0:a?",
         "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         output_path,
     ])
