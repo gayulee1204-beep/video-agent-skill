@@ -48,7 +48,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Instalar Whisper e Piper TTS
-        run: pip install openai-whisper piper-tts
+        run: pip install piper-tts
 
       - name: Baixar o modelo de voz escolhido
         id: voz
@@ -67,8 +67,6 @@ jobs:
           curl -fL -o modelo.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/${QUALIDADE}/${NOME}.onnx"
           curl -fL -o modelo.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/${VOZ}/${QUALIDADE}/${NOME}.onnx.json"
 
-      - name: Instalar a fonte Poppins para as legendas
-        run: |
           mkdir -p ~/.fonts
           curl -fL -o ~/.fonts/Poppins-Bold.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf"
           fc-cache -f ~/.fonts
@@ -96,12 +94,6 @@ jobs:
       - name: Gerar narracao (Piper TTS)
         run: python skills/video-editor-whisper/scripts/generate_narration.py input/narracao.txt narracao.wav modelo.onnx
 
-      - name: Transcrever a narracao (para legendas)
-        run: python skills/video-editor-whisper/scripts/transcribe.py narracao.wav narracao_transcript.json en
-
-      - name: Gerar arquivo de legendas
-        run: python skills/video-editor-whisper/scripts/make_srt.py narracao_transcript.json legendas.srt
-
       - name: Verificar se ha musica de fundo
         id: findmusic
         run: |
@@ -111,8 +103,8 @@ jobs:
             echo "music_file=nenhuma" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Compor o video final (narracao + musica + legendas)
-        run: python skills/video-editor-whisper/scripts/compose_final.py com_efeitos.mp4 narracao.wav "${{ steps.findmusic.outputs.music_file }}" legendas.srt final.mp4 Poppins
+      - name: Compor o video final (narracao + musica)
+        run: python skills/video-editor-whisper/scripts/compose_final.py com_efeitos.mp4 narracao.wav "${{ steps.findmusic.outputs.music_file }}" final.mp4
 
       - name: Verificar se ha imagem para sobrepor
         id: findimage
@@ -124,7 +116,7 @@ jobs:
           fi
 
       - name: Sobrepor imagem no final do video
-        run: python skills/video-editor-whisper/scripts/add_image_overlay.py final.mp4 "${{ steps.findimage.outputs.image_file }}" final_completo.mp4 5
+        run: python skills/video-editor-whisper/scripts/add_image_overlay.py final.mp4 "${{ steps.findimage.outputs.image_file }}" final_completo.mp4 8
 
       - name: Disponibilizar o video final para download
         uses: actions/upload-artifact@v4
